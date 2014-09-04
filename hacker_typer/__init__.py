@@ -19,7 +19,14 @@ template = """
 """
 
 def get_char():
-    ch = sys.stdin.read(1)
+    file_descriptor = sys.stdin.fileno()
+
+    old_settings = termios.tcgetattr(file_descriptor)
+    try:
+        tty.setraw(sys.stdin.fileno())
+        ch = sys.stdin.read(1)
+    finally:
+        termios.tcsetattr(file_descriptor, termios.TCSADRAIN, old_settings)
     #print(repr(ch))
     if ch == '\04':
         raise EOFError()
@@ -29,8 +36,8 @@ def get_char():
 
 def clear_screen():
     print('\n'*1000)
-    
-def main():
+
+if __name__ == '__main__':
     clear_screen()
     i = 0
     OKGREEN = '\033[92m'
@@ -42,24 +49,12 @@ def main():
         outstr = template[i:i+sz]
         for c in outstr:
             if c == " ":
-                print(random.choice(colors),end='',file=sys.stderr)
+                print(random.choice(colors),end='')
             print(c, end='')
             sys.stdout.flush()
-            time.sleep(0.1)
+            #time.sleep(0.03)
         i = i + sz
         if i > len(template)-(sz-1):
             i = 0
         if not random.randint(0, 400):
             clear_screen()
-
-
-
-if __name__ == '__main__':
-    file_descriptor = sys.stdin.fileno()
-
-    old_settings = termios.tcgetattr(file_descriptor)
-    try:
-        tty.setraw(sys.stdin.fileno())
-        main()
-    finally:
-        termios.tcsetattr(file_descriptor, termios.TCSADRAIN, old_settings)
